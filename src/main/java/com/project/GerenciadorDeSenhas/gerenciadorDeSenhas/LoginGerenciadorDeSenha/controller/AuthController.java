@@ -1,13 +1,13 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.controller;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.controller;
 
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.domain.User;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.dto.LoginRequestDto;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.dto.RegisterRequestDto;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.dto.ResponseDto;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.infra.security.LoginAttemptService;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.infra.security.PasswordStrengthValidator;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.infra.security.TokenService;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.repository.UserRepository;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.dto.LoginRequestDto;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.dto.RegisterRequestDto;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.dto.ResponseDto;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.LoginAttemptService;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.PasswordStrengthValidator;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.TokenService;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,7 +81,7 @@ public class AuthController {
             String token = this.tokenService.genareteToken(newUser);
             return ResponseEntity.ok(new ResponseDto(newUser.getName(), token));
         } else {
-            return ResponseEntity.badRequest().body("This email already exists, try another ");
+            return ResponseEntity.badRequest().body("This email already exists, try another");
         }
     }
 }
