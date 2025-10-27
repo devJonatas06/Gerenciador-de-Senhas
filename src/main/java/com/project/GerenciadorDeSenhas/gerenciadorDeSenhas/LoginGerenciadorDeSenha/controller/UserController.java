@@ -1,4 +1,4 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.controller;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.controller;
 
 
 import org.springframework.http.ResponseEntity;

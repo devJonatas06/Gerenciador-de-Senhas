@@ -1,4 +1,4 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.infra.security;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security;
 
 import org.springframework.stereotype.Component;
 

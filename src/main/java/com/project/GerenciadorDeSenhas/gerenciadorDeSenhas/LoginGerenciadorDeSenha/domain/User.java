@@ -1,5 +1,6 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.domain;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain;
 
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.VaultLogin;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,5 +21,7 @@ public class User {
     private String email;
     private String password;
 
+    @OneToOne(mappedBy = "vaultLogin", cascade = CascadeType.ALL)
+    private VaultLogin vaultLogin;
 
 }

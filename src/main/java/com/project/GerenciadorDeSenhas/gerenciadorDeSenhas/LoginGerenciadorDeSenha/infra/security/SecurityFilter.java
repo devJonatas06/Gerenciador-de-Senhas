@@ -1,7 +1,7 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.infra.security;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security;
 
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.domain.User;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.repository.UserRepository;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

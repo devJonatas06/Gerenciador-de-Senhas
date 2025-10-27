@@ -1,6 +1,6 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.repository;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.repository;
 
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.domain.User;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

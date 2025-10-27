@@ -14,6 +14,9 @@
 **/*.pfx
 **/credentials.json
 **/firebase-key.json
+# blacklist local
+/src/main/resources/password-blacklist.txt
+/config/password-blacklist.txt
 
 # Arquivos de IDE
 # ===============

@@ -1,4 +1,4 @@
-package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.infra.security;
+package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
