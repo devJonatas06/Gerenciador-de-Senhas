@@ -1,6 +1,6 @@
 package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain;
 
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.controller.User;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,15 +19,11 @@ public class VaultLogin {
     private long id;
 
     @OneToOne
-    @JoinColumn(name = "name", referencedColumnName = "name")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
     private String name;
 
     private String vaultPassword;
-
-    @OneToOne
-    @JoinColumn(name = "id", referencedColumnName = "id")
-    private User user;
-
-
 
 }

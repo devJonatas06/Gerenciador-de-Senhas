@@ -1,6 +1,5 @@
 package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain;
 
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,30 +9,37 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "vaults")
+@Table(name = "VaultEntry")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Vault {
+public class VaultEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    @JoinColumn(name = "id", referencedColumnName = "id")
+    private Vault vault;
 
-    @Column(nullable = false)
-    private String vaultName;
+    private String title;
 
-    @Column(nullable = true)
-    private String vaultKey;
+    private String email;
+
+    private String passwordEncrypted;
+
+    private String url;
+
+    private String notes;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+
+
 }
