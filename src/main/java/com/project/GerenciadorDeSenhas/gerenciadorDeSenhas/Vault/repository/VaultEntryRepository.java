@@ -1,10 +1,12 @@
 package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository;
 
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.Vault;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.VaultEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface VaultEntryRepository extends JpaRepository<VaultEntry, Long> {
+    List<VaultEntry> findByVault(Vault vault);
 
     List<VaultEntry> findByVaultId(Long vaultId);
 

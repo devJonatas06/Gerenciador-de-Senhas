@@ -1,81 +1,126 @@
 package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.service;
 
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.Vault;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.VaultEntry;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Repository.VaultEntryRepository;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Repository.VaultRepository;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository.VaultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.Base64;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class VaultEncryptionService {
-    
+
+    private final VaultRepository VaultRepository;
+
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int TAG_LENGTH_BIT = 128;
     private static final int IV_LENGTH_BYTE = 12;
-    
-    private final VaultRepository vaultRepository;
-    private final VaultEntryRepository vaultEntryRepository;
-    
-    public String encryptPassword(String password, Vault vault) {
+    private static final int SALT_LENGTH_BYTE = 32;
+
+    private int PBKDF2_ITERATIONS = 200_000; // Aumentado
+
+    public String encryptPassword(char[] password, Vault vault) {
         try {
-            // Deriva chave do vault + master password do usuário
             SecretKey key = deriveKey(vault);
             byte[] iv = generateIV();
-            
+
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BIT, iv);
             cipher.init(Cipher.ENCRYPT_MODE, key, spec);
-            
-            byte[] encrypted = cipher.doFinal(password.getBytes());
+
+            byte[] encrypted = cipher.doFinal(new String(password).getBytes(StandardCharsets.UTF_8));
+
             byte[] combined = new byte[iv.length + encrypted.length];
             System.arraycopy(iv, 0, combined, 0, iv.length);
             System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
-            
+
             return Base64.getEncoder().encodeToString(combined);
         } catch (Exception e) {
             throw new RuntimeException("Encryption failed", e);
+        } finally {
+            Arrays.fill(password, '\0'); // Limpar memória
         }
     }
-    
-    public String decryptPassword(String encryptedPassword, Vault vault) {
+
+    public String hashVaultKey(String vaultKey) {
         try {
-            SecretKey key = deriveKey(vault);
-            byte[] combined = Base64.getDecoder().decode(encryptedPassword);
-            
-            byte[] iv = new byte[IV_LENGTH_BYTE];
-            byte[] encrypted = new byte[combined.length - IV_LENGTH_BYTE];
-            System.arraycopy(combined, 0, iv, 0, IV_LENGTH_BYTE);
-            System.arraycopy(combined, IV_LENGTH_BYTE, encrypted, 0, encrypted.length);
-            
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BIT, iv);
-            cipher.init(Cipher.DECRYPT_MODE, key, spec);
-            
-            byte[] decrypted = cipher.doFinal(encrypted);
-            return new String(decrypted);
-        } catch (Exception e) {
-            throw new RuntimeException("Decryption failed", e);
+            byte[] salt = new byte[SALT_LENGTH_BYTE];
+            new SecureRandom().nextBytes(salt);
+
+            PBEKeySpec spec = new PBEKeySpec(vaultKey.toCharArray(), salt, PBKDF2_ITERATIONS, 256);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+
+            // Junta salt + hash e codifica em Base64
+            byte[] combined = new byte[salt.length + hash.length];
+            System.arraycopy(salt, 0, combined, 0, salt.length);
+            System.arraycopy(hash, 0, combined, salt.length, hash.length);
+
+            return Base64.getEncoder().encodeToString(combined);
+
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException("Erro ao gerar hash da chave do cofre", e);
         }
     }
-    
-    private SecretKey deriveKey(Vault vault) {
-        // Implementar derivação de chave usando vault key + user master password
-        // Usar PBKDF2 ou similar
-        return null; // Placeholder
+
+
+    private SecretKey deriveKey(Vault vault)
+            throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+        char[] vaultKey = vault.getVaultKey().toCharArray();
+        byte[] salt = getOrCreateSalt(vault);
+
+        KeySpec spec = new PBEKeySpec(vaultKey, salt, PBKDF2_ITERATIONS, 256);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+
+        return new SecretKeySpec(keyBytes, "AES");
     }
-    
+
+    private byte[] getOrCreateSalt(Vault vault) {
+        if (vault.getEncryptionSalt() == null) {
+            byte[] salt = new byte[SALT_LENGTH_BYTE];
+            new SecureRandom().nextBytes(salt);
+            vault.setEncryptionSalt(Base64.getEncoder().encodeToString(salt));
+            VaultRepository.save(vault);
+            return salt;
+        }
+        return Base64.getDecoder().decode(vault.getEncryptionSalt());
+    }
+
+    public boolean verifyVaultKey(String providedKey, String storedHash) {
+        try {
+            byte[] combined = Base64.getDecoder().decode(storedHash);
+            byte[] salt = Arrays.copyOfRange(combined, 0, SALT_LENGTH_BYTE);
+            byte[] expectedHash = Arrays.copyOfRange(combined, SALT_LENGTH_BYTE, combined.length);
+
+            PBEKeySpec spec = new PBEKeySpec(providedKey.toCharArray(), salt, PBKDF2_ITERATIONS, 256);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            byte[] providedHash = factory.generateSecret(spec).getEncoded();
+
+            return MessageDigest.isEqual(providedHash, expectedHash);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao verificar chave do cofre", e);
+        }
+    }
+
     private byte[] generateIV() {
         byte[] iv = new byte[IV_LENGTH_BYTE];
-        new java.security.SecureRandom().nextBytes(iv);
+        new SecureRandom().nextBytes(iv);
         return iv;
     }
 }

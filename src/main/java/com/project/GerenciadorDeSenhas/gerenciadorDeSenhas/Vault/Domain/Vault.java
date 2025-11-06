@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "vaults")
@@ -21,19 +23,39 @@ public class Vault {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @Column(nullable = false)
+
     private String vaultName;
 
-    @Column(nullable = true)
+    @Column(nullable = false, length = 512)
     private String vaultKey;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @OneToMany(mappedBy = "vault", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<VaultEntry> entries = new ArrayList<>();
 
-    @Column(nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PrePersist
+    public void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    @OneToOne
+    @JoinColumn(name = "vault_login_id")
+    private VaultLogin vaultLogin;
+
+    @Column(nullable = true, length = 64)
+    private String EncryptionSalt;
+
+
 }
