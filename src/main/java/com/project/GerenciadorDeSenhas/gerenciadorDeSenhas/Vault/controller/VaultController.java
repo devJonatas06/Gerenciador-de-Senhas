@@ -74,7 +74,17 @@ public class VaultController {
         entry.setPasswordEncrypted(encryptedPassword);
 
         VaultEntry savedEntry = vaultEntryRepository.save(entry);
-        return ResponseEntity.ok(savedEntry);
+
+        VaultEntryResponseDTO responseDTO = new VaultEntryResponseDTO(
+                savedEntry.getId(),
+                savedEntry.getTitle(),
+                savedEntry.getEmail(),
+                savedEntry.getUrl(),
+                savedEntry.getNotes(),
+                savedEntry.getPasswordEncrypted()
+        );
+
+        return ResponseEntity.ok(responseDTO);
     }
 
     @GetMapping("/{vaultId}/entries")
