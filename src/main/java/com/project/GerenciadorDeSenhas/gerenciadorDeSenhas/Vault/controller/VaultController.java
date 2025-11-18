@@ -100,7 +100,37 @@ public class VaultController {
         }
 
         List<VaultEntry> entries = vaultEntryRepository.findByVault(vault);
-        return ResponseEntity.ok(entries);
+
+        // Convert to DTOs
+        List<VaultEntryResponseDTO> responseDTOs = entries.stream()
+                .map(entry -> new VaultEntryResponseDTO(
+                        entry.getId(),
+                        entry.getTitle(),
+                        entry.getEmail(),
+                        entry.getUrl(),
+                        entry.getNotes(),
+                        entry.getPasswordEncrypted()
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responseDTOs);
+    }
+
+    @PutMapping("/{vaultId}")
+    public ResponseEntity<Vault> updateVault(@PathVariable Long vaultId, @Valid @RequestBody VaultRequestDTO request, @AuthenticationPrincipal User user) {
+        Vault vault = vaultRepository.findById(vaultId).orElseThrow(() -> new RuntimeException("Vault not found"));
+        if (!vault.getUser().getId().equals(user.getId())) return ResponseEntity.status(403).build();
+        vault.setVaultName(request.vaultName());
+        vaultRepository.save(vault);
+        return ResponseEntity.ok(vault);
+    }
+
+    @DeleteMapping("/{vaultId}")
+    public ResponseEntity<String> deleteVault(@PathVariable Long vaultId, @AuthenticationPrincipal User user) {
+        Vault vault = vaultRepository.findById(vaultId).orElseThrow(() -> new RuntimeException("Vault not found"));
+        if (!vault.getUser().getId().equals(user.getId())) return ResponseEntity.status(403).build();
+        vaultRepository.delete(vault);
+        return ResponseEntity.ok("Vault deleted successfully");
     }
 
 }
