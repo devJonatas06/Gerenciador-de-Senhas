@@ -57,5 +57,17 @@ public class Vault {
     @Column(nullable = true, length = 64)
     private String EncryptionSalt;
 
+    @PrePersist
+    public void onCreate() {
+        if (EncryptionSalt == null) {
+            byte[] salt = new byte[32];
+            new SecureRandom().nextBytes(salt);
+            EncryptionSalt = Base64.getEncoder().encodeToString(salt);
+        }
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+
 
 }
