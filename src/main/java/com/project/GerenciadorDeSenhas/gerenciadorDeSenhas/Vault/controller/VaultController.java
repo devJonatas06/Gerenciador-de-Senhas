@@ -141,3 +141,58 @@ public class VaultController {
         return ResponseEntity.ok("Entry deleted successfully");
     }
 
+    @GetMapping("/export")
+    public ResponseEntity<String> exportVaults(@AuthenticationPrincipal User user) throws JsonProcessingException {
+        List<Vault> vaults = vaultRepository.findByUser(user);
+        List<VaultExportDto> vaultExportDTOs = vaults.stream().map(vault -> {
+            List<VaultEntryExportDTO> entryDTOs = vault.getEntries().stream().map(entry ->
+                    new VaultEntryExportDTO(
+                            entry.getId(),
+                            entry.getTitle(),
+                            entry.getEmail(),
+                            entry.getUrl(),
+                            entry.getNotes(),
+                            entry.getPasswordEncrypted()
+                    )
+            ).collect(Collectors.toList());
+
+            return new VaultExportDto(
+                    vault.getId(),
+                    vault.getVaultName(),
+                    vault.getVaultKey(),
+                    entryDTOs
+            );
+        }).collect(Collectors.toList());
+
+        String json = new ObjectMapper().writeValueAsString(vaultExportDTOs);
+        return ResponseEntity.ok(json);
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<String> importVaults(@AuthenticationPrincipal User user, @RequestBody String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<VaultExportDto> importedVaultDTOs = mapper.readValue(json, new TypeReference<List<VaultExportDto>>() {});
+
+        importedVaultDTOs.forEach(vaultDTO -> {
+            Vault vault = new Vault();
+            vault.setUser(user);
+            vault.setVaultName(vaultDTO.vaultName());
+            vault.setVaultKey(vaultDTO.vaultKey());
+
+            Vault savedVault = vaultRepository.save(vault);
+
+            vaultDTO.entries().forEach(entryDTO -> {
+                VaultEntry entry = new VaultEntry();
+                entry.setVault(savedVault);
+                entry.setTitle(entryDTO.title());
+                entry.setEmail(entryDTO.email());
+                entry.setUrl(entryDTO.url());
+                entry.setNotes(entryDTO.notes());
+                entry.setPasswordEncrypted(entryDTO.passwordEncrypted());
+                vaultEntryRepository.save(entry);
+            });
+        });
+
+        return ResponseEntity.ok("Vaults imported successfully");
+    }
+}
