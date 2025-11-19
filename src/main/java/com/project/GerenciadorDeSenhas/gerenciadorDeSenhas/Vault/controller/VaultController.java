@@ -133,5 +133,11 @@ public class VaultController {
         return ResponseEntity.ok("Vault deleted successfully");
     }
 
-}
+    @DeleteMapping("/{vaultId}/entries/{entryId}")
+    public ResponseEntity<String> deleteEntry(@PathVariable Long vaultId, @PathVariable Long entryId, @AuthenticationPrincipal User user) {
+        Vault vault = vaultRepository.findById(vaultId).orElseThrow(() -> new RuntimeException("Vault not found"));
+        if (!vault.getUser().getId().equals(user.getId())) return ResponseEntity.status(403).build();
+        vaultEntryRepository.deleteById(entryId);
+        return ResponseEntity.ok("Entry deleted successfully");
+    }
 
