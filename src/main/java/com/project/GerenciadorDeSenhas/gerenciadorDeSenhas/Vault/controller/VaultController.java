@@ -1,12 +1,13 @@
 package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.Vault;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain.VaultEntry;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.dto.VaultEntryRequestDTO;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.dto.VaultRequestDTO;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.dto.*;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository.VaultEntryRepository;
-import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository.VaultLoginRepository;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository.VaultRepository;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.service.VaultEncryptionService;
 import jakarta.validation.Valid;
@@ -14,32 +15,26 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/vault")
 @RequiredArgsConstructor
 public class VaultController {
-
     private final VaultRepository vaultRepository;
     private final VaultEncryptionService encryptionService;
     private final VaultEntryRepository vaultEntryRepository;
-
 
     @PostMapping
     public ResponseEntity<Vault> createVault(
             @Valid @RequestBody VaultRequestDTO request,
             @AuthenticationPrincipal User user) {
-
         Vault vault = new Vault();
         vault.setUser(user);
         vault.setVaultName(request.vaultName());
-
         String hashedKey = encryptionService.hashVaultKey(request.vaultKey());
         vault.setVaultKey(hashedKey);
-
-
         Vault savedVault = vaultRepository.save(vault);
         return ResponseEntity.ok(savedVault);
     }
@@ -51,7 +46,7 @@ public class VaultController {
     }
 
     @PostMapping("/{vaultId}/entries")
-    public ResponseEntity<VaultEntry> addEntry(
+    public ResponseEntity<VaultEntryResponseDTO> addEntry(
             @PathVariable Long vaultId,
             @Valid @RequestBody VaultEntryRequestDTO request,
             @AuthenticationPrincipal User user) {
@@ -69,7 +64,6 @@ public class VaultController {
         entry.setEmail(request.email());
         entry.setUrl(request.url());
         entry.setNotes(request.notes());
-
         String encryptedPassword = encryptionService.encryptPassword(request.password().toCharArray(), vault);
         entry.setPasswordEncrypted(encryptedPassword);
 
@@ -88,7 +82,7 @@ public class VaultController {
     }
 
     @GetMapping("/{vaultId}/entries")
-    public ResponseEntity<List<VaultEntry>> getVaultEntries(
+    public ResponseEntity<List<VaultEntryResponseDTO>> getVaultEntries(
             @PathVariable Long vaultId,
             @AuthenticationPrincipal User user) {
 

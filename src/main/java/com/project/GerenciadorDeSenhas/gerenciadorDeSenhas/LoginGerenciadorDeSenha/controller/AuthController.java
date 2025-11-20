@@ -8,6 +8,7 @@ import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSen
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.PasswordStrengthValidator;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.TokenService;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.repository.UserRepository;
+import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.service.AuditService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,13 +34,12 @@ public class AuthController {
     private final TokenService tokenService;
     private final LoginAttemptService loginAttemptService;
     private final PasswordStrengthValidator passwordStrengthValidator;
-
+    private final AuditService auditService;
 
     @PostMapping("/login")
     public ResponseEntity login(@Valid @RequestBody LoginRequestDto body) {
         log.info("Tentando login com email: {}", body.email());
 
-        // bloqueio por brute-force
         if (loginAttemptService.isBlocked(body.email())) {
             log.warn("User {} blocked by too many attempts", body.email());
             return ResponseEntity.status(429).body("Too many login attempts. Try again later.");
@@ -50,6 +50,7 @@ public class AuthController {
 
         if (passwordEncoder.matches(body.password(), user.getPassword())) {
             loginAttemptService.loginSucceeded(body.email());
+            auditService.recordAction(user.getEmail(), "LOGIN_SUCCESS");
             log.info("Login bem-sucedido para {}", user.getEmail());
             String token = this.tokenService.genareteToken(user);
             Map<String, String> response = new HashMap<>();
@@ -58,6 +59,7 @@ public class AuthController {
 
         } else {
             loginAttemptService.loginFailed(body.email());
+            auditService.recordAction(body.email(), "LOGIN_FAILED");
             log.warn("Falha no login para {}", body.email());
             return ResponseEntity.status(401).body("Invalid credentials");
         }
@@ -78,6 +80,7 @@ public class AuthController {
             newUser.setName(body.name());
             this.repository.save(newUser);
 
+            auditService.recordAction(newUser.getEmail(), "REGISTER_NEW_USER");
             String token = this.tokenService.genareteToken(newUser);
             return ResponseEntity.ok(new ResponseDto(newUser.getName(), token));
         } else {

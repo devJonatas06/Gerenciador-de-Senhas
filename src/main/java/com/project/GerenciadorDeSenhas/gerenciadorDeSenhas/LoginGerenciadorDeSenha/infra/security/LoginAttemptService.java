@@ -7,8 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class LoginAttemptService {
-
-    private final int MAX_ATTEMPTS = 5; // limite
+    private final int MAX_ATTEMPTS = 5;
     private final Map<String, Integer> attemptsCache = new ConcurrentHashMap<>();
 
     public void loginSucceeded(String email) {

@@ -13,12 +13,10 @@ import java.util.stream.Collectors;
 
 @Component
 public class PasswordStrengthValidator {
-
     private final Set<String> weakPasswords = new HashSet<>();
 
     @PostConstruct
     public void init() {
-
         try (InputStream is = getClass().getResourceAsStream("/password-blacklist.txt");
              BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             this.weakPasswords.addAll(

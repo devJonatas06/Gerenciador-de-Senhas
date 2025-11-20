@@ -12,11 +12,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-
 @Service
 public class TokenService {
     @Value("${api.security.token.secret}")
-    private  String secret;
+    private String secret;
 
     public String genareteToken(User user){
         try {
@@ -39,7 +38,6 @@ public class TokenService {
                     .build()
                     .verify(token)
                     .getSubject();
-
         }catch (JWTVerificationException exp){
             return null;
         }
