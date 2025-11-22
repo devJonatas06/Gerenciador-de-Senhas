@@ -2,7 +2,7 @@ package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.Domain;
 
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+        import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

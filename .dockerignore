@@ -1,0 +1,19 @@
+
+# Git
+.git/
+.gitignore
+
+# Documentação
+README.md
+
+# Configurações de IDE
+.idea/
+*.iml
+.vscode/
+
+# Arquivos de desenvolvimento
+docker-compose.yml
+Dockerfile
+
+# Logs
+*.log
