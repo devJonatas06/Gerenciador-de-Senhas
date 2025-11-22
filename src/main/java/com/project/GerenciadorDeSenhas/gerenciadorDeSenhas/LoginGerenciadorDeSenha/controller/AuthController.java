@@ -9,6 +9,10 @@ import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSen
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.TokenService;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.repository.UserRepository;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.service.AuditService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Tag(name = "Autenticação", description = "Endpoints para registro, login e gestão de autenticação")
 public class AuthController {
 
     private final UserRepository repository;
@@ -36,6 +41,13 @@ public class AuthController {
     private final PasswordStrengthValidator passwordStrengthValidator;
     private final AuditService auditService;
 
+
+    @Operation(summary = "Login de usuário", description = "Autentica um usuário e retorna um token JWT")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas"),
+            @ApiResponse(responseCode = "429", description = "Muitas tentativas de login")
+    })
     @PostMapping("/login")
     public ResponseEntity login(@Valid @RequestBody LoginRequestDto body) {
         log.info("Tentando login com email: {}", body.email());
@@ -65,6 +77,11 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Registro de usuário", description = "Cria uma nova conta de usuário")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário registrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Email já existe ou senha fraca")
+    })
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody RegisterRequestDto body) {
         try {

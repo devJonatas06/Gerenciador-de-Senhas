@@ -3,6 +3,10 @@ package com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSe
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.domain.User;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.infra.security.PasswordStrengthValidator;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.LoginGerenciadorDeSenha.repository.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/auth")
 @Log4j2
 @RequiredArgsConstructor
+@Tag(name = "Recuperação de Senha", description = "Endpoints para recuperação e reset de senha")
 public class PasswordResetController {
 
     private final UserRepository userRepository;
@@ -30,6 +35,13 @@ public class PasswordResetController {
 
     private static final int MAX_ATTEMPTS = 5;
 
+
+
+    @Operation(summary = "Solicitar reset de senha", description = "Envia um token para reset de senha por email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Link de reset enviado"),
+            @ApiResponse(responseCode = "400", description = "Email inválido ou muitas tentativas")
+    })
     @PostMapping("/forgot-password")
     public ResponseEntity<String> requestReset(@RequestParam String email) {
 
@@ -62,6 +74,12 @@ public class PasswordResetController {
         return ResponseEntity.ok("Password reset link sent.");
     }
 
+
+    @Operation(summary = "Resetar senha", description = "Define uma nova senha usando o token de reset")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Senha atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
+    })
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
 

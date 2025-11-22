@@ -10,6 +10,10 @@ import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.dto.*;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository.VaultEntryRepository;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.repository.VaultRepository;
 import com.project.GerenciadorDeSenhas.gerenciadorDeSenhas.Vault.service.VaultEncryptionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +25,17 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/vault")
 @RequiredArgsConstructor
+@Tag(name = "Cofre de Senhas", description = "Endpoints para gerenciamento de cofres e entradas de senhas")
 public class VaultController {
     private final VaultRepository vaultRepository;
     private final VaultEncryptionService encryptionService;
     private final VaultEntryRepository vaultEntryRepository;
+
+    @Operation(summary = "Criar cofre", description = "Cria um novo cofre para o usuário autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cofre criado com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado")
+    })
 
     @PostMapping
     public ResponseEntity<Vault> createVault(
@@ -39,12 +50,18 @@ public class VaultController {
         return ResponseEntity.ok(savedVault);
     }
 
+
     @GetMapping
     public ResponseEntity<List<Vault>> getUserVaults(@AuthenticationPrincipal User user) {
         List<Vault> vaults = vaultRepository.findByUser(user);
         return ResponseEntity.ok(vaults);
     }
 
+    @Operation(summary = "Adicionar entrada", description = "Adiciona uma nova entrada de senha ao cofre")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Entrada adicionada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado ao cofre")
+    })
     @PostMapping("/{vaultId}/entries")
     public ResponseEntity<VaultEntryResponseDTO> addEntry(
             @PathVariable Long vaultId,
@@ -81,6 +98,7 @@ public class VaultController {
         return ResponseEntity.ok(responseDTO);
     }
 
+
     @GetMapping("/{vaultId}/entries")
     public ResponseEntity<List<VaultEntryResponseDTO>> getVaultEntries(
             @PathVariable Long vaultId,
@@ -95,7 +113,7 @@ public class VaultController {
 
         List<VaultEntry> entries = vaultEntryRepository.findByVault(vault);
 
-        // Convert to DTOs
+
         List<VaultEntryResponseDTO> responseDTOs = entries.stream()
                 .map(entry -> new VaultEntryResponseDTO(
                         entry.getId(),
@@ -135,6 +153,10 @@ public class VaultController {
         return ResponseEntity.ok("Entry deleted successfully");
     }
 
+    @Operation(summary = "Exportar cofres", description = "Exporta todos os cofres do usuário em formato JSON")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Exportação realizada com sucesso")
+    })
     @GetMapping("/export")
     public ResponseEntity<String> exportVaults(@AuthenticationPrincipal User user) throws JsonProcessingException {
         List<Vault> vaults = vaultRepository.findByUser(user);
@@ -162,6 +184,10 @@ public class VaultController {
         return ResponseEntity.ok(json);
     }
 
+    @Operation(summary = "Importar cofres", description = "Importa cofres a partir de um JSON")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Importação realizada com sucesso")
+    })
     @PostMapping("/import")
     public ResponseEntity<String> importVaults(@AuthenticationPrincipal User user, @RequestBody String json) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
