@@ -57,6 +57,7 @@
 # Docker e desenvolvimento
 # ========================
 **/docker-compose.override.yml
+**/docker-compose.yml
 **/.docker/
 **/docker-data/
 **/volumes/
