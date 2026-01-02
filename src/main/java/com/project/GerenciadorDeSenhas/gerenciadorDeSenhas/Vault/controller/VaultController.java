@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,10 +58,10 @@ public class VaultController {
         return ResponseEntity.ok(vaults);
     }
 
-    @Operation(summary = "Adicionar entrada", description = "Adiciona uma nova entrada de senha ao cofre")
+    @Operation(summary = "Adicionar entrada", description = "Adiciona uma nova entrada de senha ao cofre  ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Entrada adicionada com sucesso"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado ao cofre")
+            @ApiResponse(responseCode = "403", description = "Acesso negado ao cofre !")
     })
     @PostMapping("/{vaultId}/entries")
     public ResponseEntity<VaultEntryResponseDTO> addEntry(
@@ -191,7 +192,8 @@ public class VaultController {
     @PostMapping("/import")
     public ResponseEntity<String> importVaults(@AuthenticationPrincipal User user, @RequestBody String json) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        List<VaultExportDto> importedVaultDTOs = mapper.readValue(json, new TypeReference<List<VaultExportDto>>() {});
+        List<VaultExportDto> importedVaultDTOs = mapper.readValue(json, new TypeReference<List<VaultExportDto>>() {
+        });
 
         importedVaultDTOs.forEach(vaultDTO -> {
             Vault vault = new Vault();
