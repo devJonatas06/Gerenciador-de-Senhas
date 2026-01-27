@@ -30,39 +30,63 @@ public class AuthService {
     private final AuditService auditService;
 
     public ResponseEntity<?> login(LoginRequestDto body) {
+        try {
+            log.info("Auth | Login attempt | email={}", body.email());
 
-        log.info("Auth | Login attempt | email={}", body.email());
+            if (loginAttemptService.isBlocked(body.email())) {
+                log.warn(
+                        "Auth | Login blocked | email={} | reason=MAX_ATTEMPTS",
+                        body.email()
+                );
+                return ResponseEntity.status(429)
+                        .body("Too many login attempts. Try again later.");
+            }
 
-        if (loginAttemptService.isBlocked(body.email())) {
-            log.warn(
-                    "Auth | Login blocked | email={} | reason=MAX_ATTEMPTS",
-                    body.email()
+            User user = repository.findByEmail(body.email())
+                    .orElseThrow(() -> {
+                        log.warn(
+                                "Auth | Login failed | email={} | reason=USER_NOT_FOUND",
+                                body.email()
+                        );
+                        return new RuntimeException("User not found");
+                    });
+
+            if (passwordEncoder.matches(body.password(), user.getPassword())) {
+                loginAttemptService.loginSucceeded(body.email());
+                auditService.recordAction(user.getEmail(), "LOGIN_SUCCESS");
+
+                log.info(
+                        "Auth | Login success | userId={} | email={}",
+                        user.getId(),
+                        user.getEmail()
+                );
+
+                String token = tokenService.genareteToken(user);
+                Map<String, String> response = new HashMap<>();
+                response.put("token", token);
+
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn(
+                        "Auth | Login failed | email={} | reason=INVALID_PASSWORD",
+                        body.email()
+                );
+                loginAttemptService.loginFailed(body.email());
+                auditService.recordAction(body.email(), "LOGIN_FAILED");
+                return ResponseEntity.status(401).body("Invalid credentials");
+            }
+
+        } catch (Exception exception) {
+            log.error(
+                    "Auth | Login error | email={}",
+                    body.email(),
+                    exception
             );
-            return ResponseEntity.status(429)
-                    .body("Too many login attempts. Try again later.");
+            return ResponseEntity.status(500).body("Internal server error");
         }
-
-        User user = repository.findByEmail(body.email())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (passwordEncoder.matches(body.password(), user.getPassword())) {
-            loginAttemptService.loginSucceeded(body.email());
-            auditService.recordAction(user.getEmail(), "LOGIN_SUCCESS");
-
-            String token = tokenService.genareteToken(user);
-            Map<String, String> response = new HashMap<>();
-            response.put("token", token);
-
-            return ResponseEntity.ok(response);
-        }
-
-        loginAttemptService.loginFailed(body.email());
-        auditService.recordAction(body.email(), "LOGIN_FAILED");
-        return ResponseEntity.status(401).body("Invalid credentials");
     }
 
     public ResponseEntity<?> register(RegisterRequestDto body) {
-
         try {
             passwordStrengthValidator.validate(body.password());
         } catch (IllegalArgumentException e) {
@@ -82,6 +106,12 @@ public class AuthService {
 
         repository.save(newUser);
         auditService.recordAction(newUser.getEmail(), "REGISTER_NEW_USER");
+
+        log.info(
+                "Auth | Registration success | userId={} | email={}",
+                newUser.getId(),
+                newUser.getEmail()
+        );
 
         String token = tokenService.genareteToken(newUser);
         return ResponseEntity.ok(new ResponseDto(newUser.getName(), token));
