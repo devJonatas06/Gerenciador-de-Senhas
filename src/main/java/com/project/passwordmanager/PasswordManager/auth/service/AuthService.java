@@ -61,7 +61,7 @@ public class AuthService {
                         user.getEmail()
                 );
 
-                String token = tokenService.genareteToken(user);
+                String token = tokenService.generateToken(user);
                 Map<String, String> response = new HashMap<>();
                 response.put("token", token);
 
@@ -113,7 +113,7 @@ public class AuthService {
                 newUser.getEmail()
         );
 
-        String token = tokenService.genareteToken(newUser);
+        String token = tokenService.generateToken(newUser);
         return ResponseEntity.ok(new ResponseDto(newUser.getName(), token));
     }
 }

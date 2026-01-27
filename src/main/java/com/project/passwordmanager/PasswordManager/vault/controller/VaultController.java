@@ -7,7 +7,7 @@ import com.project.passwordmanager.PasswordManager.auth.entity.User;
 import com.project.passwordmanager.PasswordManager.vault.dto.*;
 import com.project.passwordmanager.PasswordManager.vault.entity.Vault;
 import com.project.passwordmanager.PasswordManager.vault.entity.VaultEntry;
-import com.project.passwordmanager.vault.dto.*;
+import com.project.passwordmanager.PasswordManager.vault.dto.*;
 import com.project.passwordmanager.PasswordManager.vault.repository.VaultEntryRepository;
 import com.project.passwordmanager.PasswordManager.vault.repository.VaultRepository;
 import com.project.passwordmanager.PasswordManager.vault.service.VaultEncryptionService;
