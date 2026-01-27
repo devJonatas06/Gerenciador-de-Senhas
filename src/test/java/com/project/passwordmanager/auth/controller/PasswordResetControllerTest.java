@@ -1,8 +1,8 @@
 package com.project.passwordmanager.auth.controller;
 
-import com.project.passwordmanager.auth.entity.User;
-import com.project.passwordmanager.auth.infra.security.PasswordStrengthValidator;
-import com.project.passwordmanager.auth.repository.UserRepository;
+import com.project.passwordmanager.PasswordManager.auth.domain.model.User;
+import com.project.passwordmanager.PasswordManager.auth.domain.service.PasswordStrengthValidator;
+import com.project.passwordmanager.PasswordManager.auth.repository.UserRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

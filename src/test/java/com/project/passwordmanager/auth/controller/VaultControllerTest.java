@@ -1,14 +1,14 @@
 package com.project.passwordmanager.auth.controller;
 
-import com.project.passwordmanager.auth.entity.User;
-import com.project.passwordmanager.vault.entity.Vault;
-import com.project.passwordmanager.vault.entity.VaultEntry;
-import com.project.passwordmanager.vault.controller.VaultController;
-import com.project.passwordmanager.vault.dto.VaultEntryRequestDTO;
-import com.project.passwordmanager.vault.dto.VaultRequestDTO;
-import com.project.passwordmanager.vault.repository.VaultEntryRepository;
-import com.project.passwordmanager.vault.repository.VaultRepository;
-import com.project.passwordmanager.vault.service.VaultEncryptionService;
+import com.project.passwordmanager.PasswordManager.auth.domain.model.User;
+import com.project.passwordmanager.PasswordManager.vault.entity.Vault;
+import com.project.passwordmanager.PasswordManager.vault.entity.VaultEntry;
+import com.project.passwordmanager.PasswordManager.vault.controller.VaultController;
+import com.project.passwordmanager.PasswordManager.vault.dto.VaultEntryRequestDTO;
+import com.project.passwordmanager.PasswordManager.vault.dto.VaultRequestDTO;
+import com.project.passwordmanager.PasswordManager.vault.repository.VaultEntryRepository;
+import com.project.passwordmanager.PasswordManager.vault.repository.VaultRepository;
+import com.project.passwordmanager.PasswordManager.vault.service.VaultEncryptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
