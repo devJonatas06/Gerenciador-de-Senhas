@@ -1,6 +1,6 @@
 package com.project.passwordmanager.auth.controller;
 
-import com.project.passwordmanager.auth.domain.User;
+import com.project.passwordmanager.auth.entity.User;
 import com.project.passwordmanager.auth.infra.security.PasswordStrengthValidator;
 import com.project.passwordmanager.auth.repository.UserRepository;
 import org.junit.jupiter.api.*;

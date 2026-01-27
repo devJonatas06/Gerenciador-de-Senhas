@@ -1,113 +1,29 @@
 package com.project.passwordmanager.auth.controller;
 
-import com.project.passwordmanager.auth.domain.User;
-import com.project.passwordmanager.auth.infra.security.PasswordStrengthValidator;
-import com.project.passwordmanager.auth.repository.UserRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import com.project.passwordmanager.auth.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/auth")
-@Log4j2
 @RequiredArgsConstructor
-@Tag(name = "Recuperação de Senha", description = "Endpoints para recuperação e reset de senha")
+@Tag(name = "Recuperação de Senha")
 public class PasswordResetController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final PasswordStrengthValidator passwordStrengthValidator;
+    private final PasswordResetService passwordResetService;
 
-    private static final ConcurrentHashMap<String, ResetTokenData> resetTokens = new ConcurrentHashMap<>();
-
-    private static final ConcurrentHashMap<String, Integer> resetAttempts = new ConcurrentHashMap<>();
-
-    private static final int MAX_ATTEMPTS = 5;
-
-
-
-    @Operation(summary = "Solicitar reset de senha", description = "Envia um token para reset de senha por email")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Link de reset enviado"),
-            @ApiResponse(responseCode = "400", description = "Email inválido ou muitas tentativas")
-    })
     @PostMapping("/forgot-password")
     public ResponseEntity<String> requestReset(@RequestParam String email) {
-
-        resetAttempts.putIfAbsent(email, 0);
-        if (resetAttempts.get(email) >= MAX_ATTEMPTS) {
-            log.warn("Many recovery attempts for this email {} it has been blocked for 5 minutes",email);
-            return ResponseEntity.badRequest().body("Too many reset attempts. Try again later.");
-        }
-
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) {
-            log.info("Email {} not found", email);
-            return ResponseEntity.badRequest().body("Invalid email");
-
-        }
-
-        resetAttempts.put(email, resetAttempts.get(email) + 1);
-
-        String token = UUID.randomUUID().toString();
-
-        ResetTokenData data = new ResetTokenData(
-                email,
-                LocalDateTime.now().plusMinutes(5)
-        );
-
-        resetTokens.put(token, data);
-
-        System.out.println("Password reset link: http://localhost:8080/auth/reset-password?token=" + token);
-
-        return ResponseEntity.ok("Password reset link sent.");
+        return passwordResetService.requestReset(email);
     }
 
-
-    @Operation(summary = "Resetar senha", description = "Define uma nova senha usando o token de reset")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Senha atualizada com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
-    })
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
-
-        ResetTokenData data = resetTokens.get(token);
-
-        if (data == null)
-            return ResponseEntity.badRequest().body("Invalid or expired token");
-
-        if (data.expireAt().isBefore(LocalDateTime.now())) {
-            resetTokens.remove(token);
-            return ResponseEntity.badRequest().body("Token expired");
-        }
-
-
-        try {
-            passwordStrengthValidator.validate(newPassword);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-        User user = userRepository.findByEmail(data.email()).orElseThrow();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        resetTokens.remove(token);
-        resetAttempts.remove(data.email());
-
-        return ResponseEntity.ok("Password updated successfully.");
+    public ResponseEntity<String> resetPassword(
+            @RequestParam String token,
+            @RequestParam String newPassword
+    ) {
+        return passwordResetService.resetPassword(token, newPassword);
     }
-
-    private record ResetTokenData(String email, LocalDateTime expireAt) {}
 }

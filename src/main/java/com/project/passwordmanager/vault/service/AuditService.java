@@ -1,6 +1,6 @@
 package com.project.passwordmanager.vault.service;
 
-import com.project.passwordmanager.vault.Domain.AuditLog;
+import com.project.passwordmanager.vault.entity.AuditLog;
 import com.project.passwordmanager.vault.repository.AuditRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

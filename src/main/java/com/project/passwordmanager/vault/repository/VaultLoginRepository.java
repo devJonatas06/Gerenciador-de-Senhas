@@ -1,6 +1,6 @@
 package com.project.passwordmanager.vault.repository;
 
-import com.project.passwordmanager.vault.Domain.VaultLogin;
+import com.project.passwordmanager.vault.entity.VaultLogin;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

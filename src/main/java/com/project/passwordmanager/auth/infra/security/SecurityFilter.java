@@ -1,7 +1,8 @@
 package com.project.passwordmanager.auth.infra.security;
 
-import com.project.passwordmanager.auth.domain.User;
+import com.project.passwordmanager.auth.entity.User;
 import com.project.passwordmanager.auth.repository.UserRepository;
+import com.project.passwordmanager.auth.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

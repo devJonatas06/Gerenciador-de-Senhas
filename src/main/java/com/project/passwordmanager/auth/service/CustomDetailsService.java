@@ -1,6 +1,6 @@
-package com.project.passwordmanager.auth.infra.security;
+package com.project.passwordmanager.auth.service;
 
-import com.project.passwordmanager.auth.domain.User;
+import com.project.passwordmanager.auth.entity.User;
 import com.project.passwordmanager.auth.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,10 +1,10 @@
-package com.project.passwordmanager.auth.infra.security;
+package com.project.passwordmanager.auth.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.project.passwordmanager.auth.domain.User;
+import com.project.passwordmanager.auth.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

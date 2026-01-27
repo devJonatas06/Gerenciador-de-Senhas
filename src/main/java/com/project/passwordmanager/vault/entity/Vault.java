@@ -1,6 +1,6 @@
-package com.project.passwordmanager.vault.Domain;
+package com.project.passwordmanager.vault.entity;
 
-import com.project.passwordmanager.auth.domain.User;
+import com.project.passwordmanager.auth.entity.User;
 import jakarta.persistence.*;
         import lombok.AllArgsConstructor;
 import lombok.Getter;

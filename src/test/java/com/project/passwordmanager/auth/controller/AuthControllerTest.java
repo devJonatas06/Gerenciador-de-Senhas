@@ -1,11 +1,11 @@
 package com.project.passwordmanager.auth.controller;
 
-import com.project.passwordmanager.auth.domain.User;
+import com.project.passwordmanager.auth.entity.User;
 import com.project.passwordmanager.auth.dto.LoginRequestDto;
 import com.project.passwordmanager.auth.dto.RegisterRequestDto;
-import com.project.passwordmanager.auth.infra.security.LoginAttemptService;
+import com.project.passwordmanager.auth.service.LoginAttemptService;
 import com.project.passwordmanager.auth.infra.security.PasswordStrengthValidator;
-import com.project.passwordmanager.auth.infra.security.TokenService;
+import com.project.passwordmanager.auth.service.TokenService;
 import com.project.passwordmanager.auth.repository.UserRepository;
 import com.project.passwordmanager.vault.service.AuditService;
 import org.junit.jupiter.api.Test;

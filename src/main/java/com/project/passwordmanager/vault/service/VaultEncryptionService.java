@@ -1,6 +1,6 @@
 package com.project.passwordmanager.vault.service;
 
-import com.project.passwordmanager.vault.Domain.Vault;
+import com.project.passwordmanager.vault.entity.Vault;
 import com.project.passwordmanager.vault.repository.VaultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

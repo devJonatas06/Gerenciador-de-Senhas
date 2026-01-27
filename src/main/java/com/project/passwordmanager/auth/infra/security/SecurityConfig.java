@@ -1,5 +1,6 @@
 package com.project.passwordmanager.auth.infra.security;
 
+import com.project.passwordmanager.auth.service.CustomDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

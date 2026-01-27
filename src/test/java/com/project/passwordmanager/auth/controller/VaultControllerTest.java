@@ -1,8 +1,8 @@
 package com.project.passwordmanager.auth.controller;
 
-import com.project.passwordmanager.auth.domain.User;
-import com.project.passwordmanager.vault.Domain.Vault;
-import com.project.passwordmanager.vault.Domain.VaultEntry;
+import com.project.passwordmanager.auth.entity.User;
+import com.project.passwordmanager.vault.entity.Vault;
+import com.project.passwordmanager.vault.entity.VaultEntry;
 import com.project.passwordmanager.vault.controller.VaultController;
 import com.project.passwordmanager.vault.dto.VaultEntryRequestDTO;
 import com.project.passwordmanager.vault.dto.VaultRequestDTO;

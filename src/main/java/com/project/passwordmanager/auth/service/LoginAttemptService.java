@@ -1,4 +1,4 @@
-package com.project.passwordmanager.auth.infra.security;
+package com.project.passwordmanager.auth.service;
 
 import org.springframework.stereotype.Component;
 
