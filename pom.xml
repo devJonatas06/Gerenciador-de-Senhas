@@ -8,10 +8,10 @@
         <version>3.5.6</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.project.GerenciadorDeSenhas</groupId>
-    <artifactId>gerenciadorDeSenhas</artifactId>
+    <groupId>com.project.passwordmanager</groupId>
+    <artifactId>passwordmanager</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>gerenciadorDeSenhas</name>
+    <name>passwordmanager</name>
     <description>Demo project for Spring Boot</description>
     <url/>
     <licenses>
