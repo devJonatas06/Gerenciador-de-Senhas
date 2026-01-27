@@ -4,7 +4,7 @@ import com.project.passwordmanager.auth.entity.User;
 import com.project.passwordmanager.auth.infra.security.PasswordStrengthValidator;
 import com.project.passwordmanager.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Log4j2
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
@@ -28,25 +28,53 @@ public class PasswordResetService {
     private static final int MAX_ATTEMPTS = 5;
 
     public ResponseEntity<String> requestReset(String email) {
+        // Tentativa de reset
+        log.info(
+                "PasswordReset | Request attempt | email={}",
+                email
+        );
 
         resetAttempts.putIfAbsent(email, 0);
+
+        // Verifica se excedeu tentativas
         if (resetAttempts.get(email) >= MAX_ATTEMPTS) {
-            log.warn("Many recovery attempts for email {}", email);
+            log.warn(
+                    "PasswordReset | Request blocked | email={} | attempts={}",
+                    email,
+                    resetAttempts.get(email)
+            );
             return ResponseEntity.badRequest()
                     .body("Too many reset attempts. Try again later.");
         }
 
         Optional<User> userOpt = userRepository.findByEmail(email);
+
+        // Verifica se usuário existe (log interno)
         if (userOpt.isEmpty()) {
+            log.warn(
+                    "PasswordReset | Request failed | email={} | reason=USER_NOT_FOUND",
+                    email
+            );
+            resetAttempts.put(email, resetAttempts.get(email) + 1);
             return ResponseEntity.badRequest().body("Invalid email");
         }
 
+        // Incrementa tentativas
         resetAttempts.put(email, resetAttempts.get(email) + 1);
 
+        // Gera token
         String token = UUID.randomUUID().toString();
-        resetTokens.put(token,
-                new ResetTokenData(email, LocalDateTime.now().plusMinutes(5)));
+        LocalDateTime expireAt = LocalDateTime.now().plusMinutes(5);
+        resetTokens.put(token, new ResetTokenData(email, expireAt));
 
+        // Log de token gerado
+        log.info(
+                "PasswordReset | Token generated | email={} | expiresAt={}",
+                email,
+                expireAt
+        );
+
+        // Em produção, enviar email
         System.out.println(
                 "Password reset link: http://localhost:8080/auth/reset-password?token=" + token
         );
@@ -55,29 +83,52 @@ public class PasswordResetService {
     }
 
     public ResponseEntity<String> resetPassword(String token, String newPassword) {
-
         ResetTokenData data = resetTokens.get(token);
+
+        // Token inválido
         if (data == null) {
+            log.warn(
+                    "PasswordReset | Reset failed | token={} | reason=INVALID_TOKEN",
+                    token
+            );
             return ResponseEntity.badRequest().body("Invalid or expired token");
         }
 
+        // Token expirado
         if (data.expireAt().isBefore(LocalDateTime.now())) {
+            log.warn(
+                    "PasswordReset | Reset failed | token={} | reason=TOKEN_EXPIRED",
+                    token
+            );
             resetTokens.remove(token);
             return ResponseEntity.badRequest().body("Token expired");
         }
 
+        // Valida força da senha
         try {
             passwordStrengthValidator.validate(newPassword);
         } catch (IllegalArgumentException e) {
+            log.warn(
+                    "PasswordReset | Reset failed | email={} | reason=WEAK_PASSWORD",
+                    data.email()
+            );
             return ResponseEntity.badRequest().body(e.getMessage());
         }
 
+        // Atualiza senha
         User user = userRepository.findByEmail(data.email()).orElseThrow();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
+        // Limpa tokens e tentativas
         resetTokens.remove(token);
         resetAttempts.remove(data.email());
+
+        // Log de sucesso
+        log.info(
+                "PasswordReset | Password updated | email={}",
+                data.email()
+        );
 
         return ResponseEntity.ok("Password updated successfully.");
     }

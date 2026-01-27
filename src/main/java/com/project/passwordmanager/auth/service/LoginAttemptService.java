@@ -1,10 +1,12 @@
 package com.project.passwordmanager.auth.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Component
 public class LoginAttemptService {
     private final int MAX_ATTEMPTS = 5;
@@ -12,13 +14,43 @@ public class LoginAttemptService {
 
     public void loginSucceeded(String email) {
         attemptsCache.remove(email);
+        log.info(
+                "Security | Login attempts reset | email={}",
+                email
+        );
     }
 
     public void loginFailed(String email) {
-        attemptsCache.merge(email, 1, Integer::sum);
+        int attempts = attemptsCache.merge(email, 1, Integer::sum);
+
+        if (attempts >= MAX_ATTEMPTS) {
+            log.warn(
+                    "Security | Account temporarily blocked | email={} | attempts={}",
+                    email,
+                    attempts
+            );
+        } else {
+            log.debug(
+                    "Security | Login failed attempt | email={} | attempt={}/{}",
+                    email,
+                    attempts,
+                    MAX_ATTEMPTS
+            );
+        }
     }
 
     public boolean isBlocked(String email) {
-        return attemptsCache.getOrDefault(email, 0) >= MAX_ATTEMPTS;
+        int attempts = attemptsCache.getOrDefault(email, 0);
+        boolean blocked = attempts >= MAX_ATTEMPTS;
+
+        if (blocked) {
+            log.debug(
+                    "Security | Account is blocked | email={} | attempts={}",
+                    email,
+                    attempts
+            );
+        }
+
+        return blocked;
     }
 }
