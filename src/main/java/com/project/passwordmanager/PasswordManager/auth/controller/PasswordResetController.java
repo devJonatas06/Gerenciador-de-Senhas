@@ -1,7 +1,6 @@
 package com.project.passwordmanager.PasswordManager.auth.controller;
 
 import com.project.passwordmanager.PasswordManager.auth.service.PasswordResetService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name = "Recuperação de Senha")
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;
