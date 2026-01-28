@@ -1,5 +1,6 @@
 package com.project.passwordmanager.PasswordManager.auth.infra.security;
 
+import com.project.passwordmanager.PasswordManager.auth.dto.UserPrincipal;
 import com.project.passwordmanager.PasswordManager.auth.entity.User;
 import com.project.passwordmanager.PasswordManager.auth.repository.UserRepository;
 import com.project.passwordmanager.PasswordManager.auth.service.TokenService;
@@ -27,12 +28,15 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var token = this.recoverToken(request);
-        var login = tokenService.validateToken(token);
+        var email = tokenService.validateToken(token);
 
-        if (login != null) {
-            User user = userRepository.findByEmail(login).orElseThrow(() -> new RuntimeException("User Not Found"));
+        if (email != null) {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User Not Found"));
+
+            UserPrincipal userPrincipal = UserPrincipal.from(user);
             var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
+            var authentication = new UsernamePasswordAuthenticationToken(userPrincipal, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         filterChain.doFilter(request, response);

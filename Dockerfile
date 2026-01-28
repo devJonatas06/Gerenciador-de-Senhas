@@ -4,7 +4,8 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copiar JAR
-COPY target/gerenciadorDeSenhas*.jar app.jar
+COPY target/PasswordManager*.jar app.jar
+
 
 # Segurança - usuário não-root
 RUN addgroup -S spring && adduser -S spring -G spring

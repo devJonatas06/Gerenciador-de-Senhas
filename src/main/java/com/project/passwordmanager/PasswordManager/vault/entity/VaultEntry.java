@@ -1,5 +1,7 @@
 package com.project.passwordmanager.PasswordManager.vault.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,6 +24,7 @@ public class VaultEntry {
 
     @ManyToOne
     @JoinColumn(name = "vault_id", referencedColumnName = "id")
+    @JsonIgnore
     private Vault vault;
 
     private String title;
@@ -47,7 +50,4 @@ public class VaultEntry {
     public void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-
-
 }

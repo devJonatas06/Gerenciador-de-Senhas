@@ -1,8 +1,8 @@
 package com.project.passwordmanager.PasswordManager.vault.service;
 
 import com.project.passwordmanager.PasswordManager.vault.entity.Vault;
-import com.project.passwordmanager.PasswordManager.vault.repository.VaultRepository;
-import lombok.RequiredArgsConstructor;
+import com.project.passwordmanager.PasswordManager.vault.exception.EncryptionException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -19,15 +19,14 @@ import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class VaultEncryptionService {
-    private final VaultRepository VaultRepository;
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int TAG_LENGTH_BIT = 128;
     private static final int IV_LENGTH_BYTE = 12;
     private static final int SALT_LENGTH_BYTE = 32;
-    private int PBKDF2_ITERATIONS = 200_000;
+    private static final int PBKDF2_ITERATIONS = 200_000;
 
     public String encryptPassword(char[] password, Vault vault) {
         try {
@@ -42,7 +41,7 @@ public class VaultEncryptionService {
             System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
             return Base64.getEncoder().encodeToString(combined);
         } catch (Exception e) {
-            throw new RuntimeException("Encryption failed", e);
+            throw new EncryptionException("Encryption failed", e);
         } finally {
             Arrays.fill(password, '\0');
         }
@@ -60,26 +59,22 @@ public class VaultEncryptionService {
             System.arraycopy(hash, 0, combined, salt.length, hash.length);
             return Base64.getEncoder().encodeToString(combined);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new RuntimeException("Erro ao gerar hash da chave do cofre", e);
+            throw new EncryptionException("Error generating vault key hash", e);
         }
     }
 
     private SecretKey deriveKey(Vault vault) throws NoSuchAlgorithmException, InvalidKeySpecException {
         char[] vaultKey = vault.getVaultKey().toCharArray();
-        byte[] salt = getOrCreateSalt(vault);
+        byte[] salt = getVaultSalt(vault);
         KeySpec spec = new PBEKeySpec(vaultKey, salt, PBKDF2_ITERATIONS, 256);
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         byte[] keyBytes = factory.generateSecret(spec).getEncoded();
         return new SecretKeySpec(keyBytes, "AES");
     }
 
-    private byte[] getOrCreateSalt(Vault vault) {
+    private byte[] getVaultSalt(Vault vault) {
         if (vault.getEncryptionSalt() == null) {
-            byte[] salt = new byte[SALT_LENGTH_BYTE];
-            new SecureRandom().nextBytes(salt);
-            vault.setEncryptionSalt(Base64.getEncoder().encodeToString(salt));
-            VaultRepository.save(vault);
-            return salt;
+            throw new IllegalStateException("Vault does not have encryption salt");
         }
         return Base64.getDecoder().decode(vault.getEncryptionSalt());
     }
@@ -94,7 +89,7 @@ public class VaultEncryptionService {
             byte[] providedHash = factory.generateSecret(spec).getEncoded();
             return MessageDigest.isEqual(providedHash, expectedHash);
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao verificar chave do cofre", e);
+            throw new EncryptionException("Error verifying vault key", e);
         }
     }
 

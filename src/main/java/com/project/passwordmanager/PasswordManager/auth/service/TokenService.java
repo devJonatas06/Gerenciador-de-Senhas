@@ -20,7 +20,7 @@ public class TokenService {
     @Value("${api.security.token.secret}")
     private String secret;
 
-    public String generateToken(User user) {
+    public String generateToken(User user) { // Corrigido: generateToken (antes genareteToken)
         try {
             log.debug(
                     "JWT | Generating token | subject={} | expiresIn=2h",
@@ -50,7 +50,7 @@ public class TokenService {
         }
     }
 
-    public String validateToken(String token) {
+    public String validateToken(String token) { // Corrigido: validateToken (antes validadeToken)
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             String subject = JWT.require(algorithm)

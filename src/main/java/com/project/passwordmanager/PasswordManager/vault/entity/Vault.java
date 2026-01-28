@@ -1,8 +1,10 @@
 package com.project.passwordmanager.PasswordManager.vault.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.project.passwordmanager.PasswordManager.auth.entity.User;
 import jakarta.persistence.*;
-        import lombok.AllArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,14 +29,16 @@ public class Vault {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonIgnore
     private User user;
-
 
     private String vaultName;
 
     @Column(nullable = false, length = 512)
+    @JsonIgnore
     private String vaultKey;
 
+    @JsonManagedReference // Adicione esta anotação
     @OneToMany(mappedBy = "vault", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VaultEntry> entries = new ArrayList<>();
 
@@ -47,19 +51,16 @@ public class Vault {
     }
 
     @Column(nullable = true, length = 64)
-    private String EncryptionSalt;
+    private String encryptionSalt;
 
     @PrePersist
     public void onCreate() {
-        if (EncryptionSalt == null) {
+        if (encryptionSalt == null) {
             byte[] salt = new byte[32];
             new SecureRandom().nextBytes(salt);
-            EncryptionSalt = Base64.getEncoder().encodeToString(salt);
+            encryptionSalt = Base64.getEncoder().encodeToString(salt);
         }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
-
-
-
 }
