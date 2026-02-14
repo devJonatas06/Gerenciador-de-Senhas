@@ -2,6 +2,7 @@ package com.project.passwordmanager.PasswordManager.auth.controller;
 
 import com.project.passwordmanager.PasswordManager.auth.dto.LoginRequestDto;
 import com.project.passwordmanager.PasswordManager.auth.dto.RegisterRequestDto;
+import com.project.passwordmanager.PasswordManager.auth.dto.ResponseDto;
 import com.project.passwordmanager.PasswordManager.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +17,14 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto body) {
-        return authService.login(body);
+    public ResponseEntity<ResponseDto> login(@Valid @RequestBody LoginRequestDto body) {
+        ResponseDto response = authService.login(body);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequestDto body) {
-        return authService.register(body);
+    public ResponseEntity<ResponseDto> register(@RequestBody RegisterRequestDto body) {
+        return ResponseEntity.ok(authService.register(body));
     }
+
 }

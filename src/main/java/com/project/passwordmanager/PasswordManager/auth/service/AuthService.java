@@ -4,6 +4,8 @@ import com.project.passwordmanager.PasswordManager.auth.dto.LoginRequestDto;
 import com.project.passwordmanager.PasswordManager.auth.dto.RegisterRequestDto;
 import com.project.passwordmanager.PasswordManager.auth.dto.ResponseDto;
 import com.project.passwordmanager.PasswordManager.auth.entity.User;
+import com.project.passwordmanager.PasswordManager.auth.exception.BusinessException;
+import com.project.passwordmanager.PasswordManager.auth.exception.ResourceNotFoundException;
 import com.project.passwordmanager.PasswordManager.auth.infra.security.PasswordStrengthValidator;
 import com.project.passwordmanager.PasswordManager.auth.repository.UserRepository;
 import com.project.passwordmanager.PasswordManager.vault.service.AuditService;
@@ -29,74 +31,37 @@ public class AuthService {
     private final PasswordStrengthValidator passwordStrengthValidator;
     private final AuditService auditService;
 
-    public ResponseEntity<?> login(LoginRequestDto body) {
-        try {
-            log.info("Auth | Login attempt | email={}", body.email());
+    public ResponseDto login(LoginRequestDto body) {
 
-            if (loginAttemptService.isBlocked(body.email())) {
-                log.warn(
-                        "Auth | Login blocked | email={} | reason=MAX_ATTEMPTS",
-                        body.email()
-                );
-                return ResponseEntity.status(429)
-                        .body("Too many login attempts. Try again later.");
-            }
+        log.info("Auth | Login attempt | email={}", body.email());
 
-            User user = repository.findByEmail(body.email())
-                    .orElseThrow(() -> {
-                        log.warn(
-                                "Auth | Login failed | email={} | reason=USER_NOT_FOUND",
-                                body.email()
-                        );
-                        return new RuntimeException("User not found");
-                    });
-
-            if (passwordEncoder.matches(body.password(), user.getPassword())) {
-                loginAttemptService.loginSucceeded(body.email());
-                auditService.recordAction(user.getEmail(), "LOGIN_SUCCESS");
-
-                log.info(
-                        "Auth | Login success | userId={} | email={}",
-                        user.getId(),
-                        user.getEmail()
-                );
-
-                String token = tokenService.generateToken(user);
-                Map<String, String> response = new HashMap<>();
-                response.put("token", token);
-
-                return ResponseEntity.ok(response);
-            } else {
-                log.warn(
-                        "Auth | Login failed | email={} | reason=INVALID_PASSWORD",
-                        body.email()
-                );
-                loginAttemptService.loginFailed(body.email());
-                auditService.recordAction(body.email(), "LOGIN_FAILED");
-                return ResponseEntity.status(401).body("Invalid credentials");
-            }
-
-        } catch (Exception exception) {
-            log.error(
-                    "Auth | Login error | email={}",
-                    body.email(),
-                    exception
-            );
-            return ResponseEntity.status(500).body("Internal server error");
+        if (loginAttemptService.isBlocked(body.email())) {
+            throw new SecurityException("Too many login attempts. Try again later.");
         }
+
+        User user = repository.findByEmail(body.email())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(body.password(), user.getPassword())) {
+            loginAttemptService.loginFailed(body.email());
+            auditService.recordAction(body.email(), "LOGIN_FAILED");
+            throw new SecurityException("Invalid credentials");
+        }
+
+        loginAttemptService.loginSucceeded(body.email());
+        auditService.recordAction(user.getEmail(), "LOGIN_SUCCESS");
+
+        String token = tokenService.generateToken(user);
+
+        return new ResponseDto(user.getName(), token);
     }
 
-    public ResponseEntity<?> register(RegisterRequestDto body) {
-        try {
-            passwordStrengthValidator.validate(body.password());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseDto register(RegisterRequestDto body) {
 
-        Optional<User> user = repository.findByEmail(body.email());
-        if (user.isPresent()) {
-            return ResponseEntity.badRequest()
-                    .body("This email already exists, try another");
+        passwordStrengthValidator.validate(body.password());
+
+        if (repository.findByEmail(body.email()).isPresent()) {
+            throw new BusinessException("This email already exists, try another");
         }
 
         User newUser = new User();
@@ -107,13 +72,8 @@ public class AuthService {
         repository.save(newUser);
         auditService.recordAction(newUser.getEmail(), "REGISTER_NEW_USER");
 
-        log.info(
-                "Auth | Registration success | userId={} | email={}",
-                newUser.getId(),
-                newUser.getEmail()
-        );
-
         String token = tokenService.generateToken(newUser);
-        return ResponseEntity.ok(new ResponseDto(newUser.getName(), token));
+
+        return new ResponseDto(newUser.getName(), token);
     }
 }
