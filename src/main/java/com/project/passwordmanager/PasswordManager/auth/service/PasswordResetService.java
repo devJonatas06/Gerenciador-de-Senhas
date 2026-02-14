@@ -26,55 +26,32 @@ public class PasswordResetService {
     private static final ConcurrentHashMap<String, ResetTokenData> resetTokens = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Integer> resetAttempts = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 5;
+    private static final int TOKEN_EXPIRATION_MINUTES = 5;
+
 
     public ResponseEntity<String> requestReset(String email) {
-        // Tentativa de reset
-        log.info(
-                "PasswordReset | Request attempt | email={}",
-                email
-        );
 
-        resetAttempts.putIfAbsent(email, 0);
+        log.info("PasswordReset | Request attempt | email={}", email);
 
-        // Verifica se excedeu tentativas
-        if (resetAttempts.get(email) >= MAX_ATTEMPTS) {
-            log.warn(
-                    "PasswordReset | Request blocked | email={} | attempts={}",
-                    email,
-                    resetAttempts.get(email)
-            );
-            return ResponseEntity.badRequest()
-                    .body("Too many reset attempts. Try again later.");
+        if (isBlocked(email)) {
+            log.warn("PasswordReset | Request blocked | email={} | attempts={}",
+                    email, getAttempts(email));
+            return badRequest("Too many reset attempts. Try again later.");
         }
 
         Optional<User> userOpt = userRepository.findByEmail(email);
 
-        // Verifica se usuário existe (log interno)
         if (userOpt.isEmpty()) {
-            log.warn(
-                    "PasswordReset | Request failed | email={} | reason=USER_NOT_FOUND",
-                    email
-            );
-            resetAttempts.put(email, resetAttempts.get(email) + 1);
-            return ResponseEntity.badRequest().body("Invalid email");
+            incrementAttempts(email);
+            log.warn("PasswordReset | Request failed | email={} | reason=USER_NOT_FOUND", email);
+            return badRequest("Invalid email");
         }
 
-        // Incrementa tentativas
-        resetAttempts.put(email, resetAttempts.get(email) + 1);
+        incrementAttempts(email);
+        String token = generateToken(email);
 
-        // Gera token
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expireAt = LocalDateTime.now().plusMinutes(5);
-        resetTokens.put(token, new ResetTokenData(email, expireAt));
+        log.info("PasswordReset | Token generated | email={}", email);
 
-        // Log de token gerado
-        log.info(
-                "PasswordReset | Token generated | email={} | expiresAt={}",
-                email,
-                expireAt
-        );
-
-        // Em produção, enviar email
         System.out.println(
                 "Password reset link: http://localhost:8080/auth/reset-password?token=" + token
         );
@@ -83,55 +60,91 @@ public class PasswordResetService {
     }
 
     public ResponseEntity<String> resetPassword(String token, String newPassword) {
-        ResetTokenData data = resetTokens.get(token);
 
-        // Token inválido
-        if (data == null) {
-            log.warn(
-                    "PasswordReset | Reset failed | token={} | reason=INVALID_TOKEN",
-                    token
-            );
-            return ResponseEntity.badRequest().body("Invalid or expired token");
+        ResetTokenData tokenData = validateToken(token);
+        if (tokenData == null) {
+            return badRequest("Invalid or expired token");
         }
 
-        // Token expirado
-        if (data.expireAt().isBefore(LocalDateTime.now())) {
-            log.warn(
-                    "PasswordReset | Reset failed | token={} | reason=TOKEN_EXPIRED",
-                    token
-            );
-            resetTokens.remove(token);
-            return ResponseEntity.badRequest().body("Token expired");
+        if (!isPasswordStrong(newPassword, tokenData.email())) {
+            return badRequest("Password does not meet security requirements.");
         }
 
-        // Valida força da senha
-        try {
-            passwordStrengthValidator.validate(newPassword);
-        } catch (IllegalArgumentException e) {
-            log.warn(
-                    "PasswordReset | Reset failed | email={} | reason=WEAK_PASSWORD",
-                    data.email()
-            );
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        updateUserPassword(tokenData.email(), newPassword);
 
-        // Atualiza senha
-        User user = userRepository.findByEmail(data.email()).orElseThrow();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
+        clearResetData(token, tokenData.email());
 
-        // Limpa tokens e tentativas
-        resetTokens.remove(token);
-        resetAttempts.remove(data.email());
-
-        // Log de sucesso
-        log.info(
-                "PasswordReset | Password updated | email={}",
-                data.email()
-        );
+        log.info("PasswordReset | Password updated | email={}", tokenData.email());
 
         return ResponseEntity.ok("Password updated successfully.");
     }
+
+
+    private boolean isBlocked(String email) {
+        return getAttempts(email) >= MAX_ATTEMPTS;
+    }
+
+    private int getAttempts(String email) {
+        return resetAttempts.getOrDefault(email, 0);
+    }
+
+    private void incrementAttempts(String email) {
+        resetAttempts.merge(email, 1, Integer::sum);
+    }
+
+    private String generateToken(String email) {
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expireAt = LocalDateTime.now().plusMinutes(TOKEN_EXPIRATION_MINUTES);
+
+        resetTokens.put(token, new ResetTokenData(email, expireAt));
+        return token;
+    }
+
+    private ResetTokenData validateToken(String token) {
+        ResetTokenData data = resetTokens.get(token);
+
+        if (data == null) {
+            log.warn("PasswordReset | Reset failed | token={} | reason=INVALID_TOKEN", token);
+            return null;
+        }
+
+        if (data.expireAt().isBefore(LocalDateTime.now())) {
+            log.warn("PasswordReset | Reset failed | token={} | reason=TOKEN_EXPIRED", token);
+            resetTokens.remove(token);
+            return null;
+        }
+
+        return data;
+    }
+
+    private boolean isPasswordStrong(String password, String email) {
+        try {
+            passwordStrengthValidator.validate(password);
+            return true;
+        } catch (IllegalArgumentException e) {
+            log.warn("PasswordReset | Reset failed | email={} | reason=WEAK_PASSWORD", email);
+            return false;
+        }
+    }
+
+    private void updateUserPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found during reset"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    private void clearResetData(String token, String email) {
+        resetTokens.remove(token);
+        resetAttempts.remove(email);
+    }
+
+    private ResponseEntity<String> badRequest(String message) {
+        return ResponseEntity.badRequest().body(message);
+    }
+
+
 
     private record ResetTokenData(String email, LocalDateTime expireAt) {}
 }
